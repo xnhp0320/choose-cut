@@ -3,7 +3,7 @@
 
 SRCFILES += $(wildcard ccan/*/*.c)
 
-CCAN_CFLAGS=-g -O3 -Wall -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wpointer-arith -Wwrite-strings -Wundef -DCCAN_STR_DEBUG=1 -mbmi -msse
+CCAN_CFLAGS=-g -O2 -Wall -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wpointer-arith -Wwrite-strings -Wundef -DCCAN_STR_DEBUG=1 -mbmi -msse
 #CCAN_CFLAGS=-g3 -ggdb -Wall -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wpointer-arith -Wwrite-strings -Wundef -DCCAN_STR_DEBUG=1 -mbmi -msse
 CFLAGS = $(CCAN_CFLAGS) -I. $(DEPGEN)
 CFLAGS_FORCE_C_SOURCE = -x c
@@ -163,6 +163,7 @@ MYTESTFILES=test.c main.c
 MYSRCFILES=$(filter-out $(MYTESTFILES), $(wildcard *.c))
 MYOBJFILES=$(patsubst %.c, %.o, $(MYSRCFILES))
 
+-include *.d
 main: $(MYOBJFILES) main.o libccan.a 
 	$(CC) -o $@ $^
 

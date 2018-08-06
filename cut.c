@@ -36,7 +36,7 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
                 }
             }
         }
-        LOG("for cut %d, min %.2f, chose_dim %d\n", t, min[t], chose_dim[t]);
+        //LOG("for cut %d, min %.2f, chose_dim %d\n", t, min[t], chose_dim[t]);
     }
 
     chose_t = 0;
@@ -51,15 +51,15 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
 
     if(memory_constraints) {
         int mem_quant[MAX_CUT_TYPE];
-        int cut_ok = 0;
         for(t = 0; t < MAX_CUT_TYPE; t++) {
-            if(min[t] < (double)BUCKETSIZE) {
+            if(cuts[t].all_fits_bs(aux, chose_dim[t])) {
                 mem_quant[t] = cuts[t].mem_quant(aux, chose_dim[t]); 
-                cut_ok++;
+            } else {
+                mem_quant[t] = CHILDCOUNT;
             }
         }
 
-        for(t = 0; t < cut_ok; t++ ) {
+        for(t = 0; t < MAX_CUT_TYPE; t++ ) {
             if(mem_quant[t] < mem_quant[0]) {
                 mem_quant[0] = mem_quant[t];
                 chose_t = t;
@@ -68,7 +68,7 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
     }
 
 
-    LOG("Choose %d Cut %d\n", chose_dim[chose_t], chose_t);    
+    //LOG("Choose %d Cut method %d\n", chose_dim[chose_t], chose_t);    
     n->dim = chose_dim[chose_t];
     cuts[chose_t].cut_node(n, chose_dim[chose_t], aux);
 }

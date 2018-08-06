@@ -15,9 +15,9 @@ struct rule_hist{
 };
 
 struct sp_node {
-    uint8_t dim_root;
     uint8_t dim_left;
     uint8_t dim_right;
+    uint8_t shape;
     uint8_t pad;
 
     uint32_t root_split;
@@ -94,10 +94,11 @@ struct cut_method {
     int (*cut_node)(struct cnode *n, int dim, struct cut_aux *aux);
     double (*match_expect)(struct cnode *n, int dim, struct cut_aux *aux);
     int (*mem_quant)(struct cut_aux *aux, int dim);
+    bool (*all_fits_bs)(struct cut_aux *aux, int dim);
 };
 
 enum cut_type {
-//    BITMAP_CUT,
+    BITMAP_CUT,
     SPLIT_CUT,
     MAX_CUT_TYPE
 };

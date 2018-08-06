@@ -270,14 +270,26 @@ static int even_mem_quant(struct cut_aux *aux, int dim)
     return aux->hist[dim].childs;
 }
 
-/* 
+static bool even_fits_bs(struct cut_aux *aux, int dim)
+{
+    int i;
+    for(i = 0; i < CHILDCOUNT; i ++) {
+        if(aux->hist[dim].child_rulecount[i]) {
+            if(aux->hist[dim].child_rulecount[i] > BUCKETSIZE) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[BITMAP_CUT].aux_init = even_init;
     cuts[BITMAP_CUT].cut_node = even_cut;
     cuts[BITMAP_CUT].match_expect = even_match_expect;
     cuts[BITMAP_CUT].mem_quant = even_mem_quant;
+    cuts[BITMAP_CUT].all_fits_bs = even_fits_bs;
 }
-*/
 
 

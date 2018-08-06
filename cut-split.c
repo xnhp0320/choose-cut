@@ -84,18 +84,11 @@ find_min_me_do(double *min_me, unsigned int *s, struct range1d range[],
                     double curr, unsigned int scurr, unsigned int left, \
                     unsigned int right)
 {
-    if(*s == 0) {
+    if(*min_me > curr) {
         *min_me = curr;
         *s = scurr;
         range[0].weight = left;
         range[1].weight = right;
-    } else {
-        if(*min_me > curr) {
-            *min_me = curr;
-            *s = scurr;
-            range[0].weight = left;
-            range[1].weight = right;
-        }
     }
 }
 
@@ -135,8 +128,8 @@ split_match_expect_1d(struct snode *n, int dim, struct cut_aux *aux)
         return (double)n->ruleset.num;
     }
     
-    double min_me, curr_me; 
-    unsigned int left = 0, dup=0, right=0, split = 0, e;
+    double min_me = (double)n->ruleset.num, curr_me; 
+    unsigned int left = 0, dup=0, right=0, split, e;
     unsigned int s = darray_item(ranges, 0).low;
     struct range1d *top, *r, *o;
 
@@ -145,6 +138,8 @@ split_match_expect_1d(struct snode *n, int dim, struct cut_aux *aux)
 
     n->r[0].low = darray_item(ranges, 0).low;
     n->r[1].high = darray_item(ranges, 0).high;
+    /* this just gives split an initial value */
+    split = n->r[0].low;
 
     i = 1;
     int j;
@@ -373,7 +368,8 @@ split_match_expect(struct cnode *node, int dim, struct cut_aux *cut_aux)
         return me;
     }
 
-    if(memory_constraints && me < (double)BUCKETSIZE) {
+    if(memory_constraints && n->r[0].weight <= BUCKETSIZE && \
+            n->r[1].weight <= BUCKETSIZE) {
         split_disable_snode(&aux->strees[dim].left);
         split_disable_snode(&aux->strees[dim].right);
         return me;
@@ -476,12 +472,41 @@ split_mem_quant(struct cut_aux *aux, int dim)
     return ret;
 }
 
+static bool
+split_fits_bs(struct cut_aux *aux, int dim)
+{
+    struct stree *t = &aux->split_aux.strees[dim];
+
+    if(split_snode_enabled(&t->left)) {
+        if(t->left.r[0].weight > BUCKETSIZE || \
+            t->left.r[1].weight > BUCKETSIZE) {
+            return false;
+        }
+    } else {
+        if(t->root.r[0].weight > BUCKETSIZE)
+            return false;
+    }
+
+    if(split_snode_enabled(&t->right)) {
+        if(t->right.r[0].weight > BUCKETSIZE || \
+            t->right.r[1].weight > BUCKETSIZE) {
+            return false;
+        }
+    } else {
+        if(t->root.r[1].weight > BUCKETSIZE)
+            return false;
+    }
+
+    return true;
+}
+
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[SPLIT_CUT].aux_init = split_aux_init;
     cuts[SPLIT_CUT].cut_node = split_cut;
     cuts[SPLIT_CUT].match_expect = split_match_expect;
     cuts[SPLIT_CUT].mem_quant = split_mem_quant;
+    cuts[SPLIT_CUT].all_fits_bs = split_fits_bs;
 }
 
 
