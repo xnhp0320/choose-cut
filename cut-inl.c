@@ -25,4 +25,4 @@ void remove_redund(rule_set_t *ruleset)
     ruleset->num = j;
 }
 
-bool memory_constraints = false; 
+bool memory_constraints = true; 

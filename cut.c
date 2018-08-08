@@ -5,15 +5,23 @@
 static int node_cnt;
 static int leaf_cnt;
 static int rule_cnt;
+static int depth;
+static int max_depth;
 
 void cut_node(struct cnode *n, struct cut_aux *aux)
 {
     node_cnt ++;
 
+    depth++;
+    if(depth > max_depth)
+        max_depth = depth;
+
     if(n->ruleset.num <= BUCKETSIZE) {
         n->leaf = 1;
         leaf_cnt++;
         rule_cnt += n->ruleset.num;
+        LOG("leaf depth %d\n", depth);
+        depth --;
         return;
     }
     
@@ -68,9 +76,10 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
     }
 
 
-    //LOG("Choose %d Cut method %d\n", chose_dim[chose_t], chose_t);    
+    LOG("Choose %d Cut method %d\n", chose_dim[chose_t], chose_t);    
     n->dim = chose_dim[chose_t];
     cuts[chose_t].cut_node(n, chose_dim[chose_t], aux);
+    depth --;
 }
 
 void cut(struct cnode *root)
@@ -84,6 +93,7 @@ void cut(struct cnode *root)
     LOG("NODE %d\n", node_cnt);
     LOG("LEAF %d\n", leaf_cnt);
     LOG("RULES %d\n", rule_cnt);
+    LOG("DEPTH %d, max Depth %d\n", depth, max_depth);
     
 }
 

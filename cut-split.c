@@ -110,6 +110,13 @@ split_snode_enabled(struct snode *n)
     return n->flags == 1;
 }
 
+static double
+split_match_expect_heuristic(unsigned int left, unsigned int right)
+{
+    //return (double)(right + left)/2.;
+    return ((double)(right *right))/(right + left) + ((double)(left * left))/(right + left);
+}
+
 static double 
 split_match_expect_1d(struct snode *n, int dim, struct cut_aux *aux)
 {
@@ -164,7 +171,7 @@ split_match_expect_1d(struct snode *n, int dim, struct cut_aux *aux)
 
             right = n->ruleset.num  - left;
 
-            curr_me = (right + left + dup) / 2.;
+            curr_me = split_match_expect_heuristic(left+dup, right);
             find_min_me_do(&min_me, &split, n->r, \
                             curr_me, e, left+dup, right);
         }
@@ -182,7 +189,7 @@ split_match_expect_1d(struct snode *n, int dim, struct cut_aux *aux)
 
         right = n->ruleset.num - left;
 
-        curr_me = (right + left + dup)/2.;
+        curr_me = split_match_expect_heuristic( left + dup, right);
         find_min_me_do(&min_me, &split, n->r, \
                         curr_me, r->low -1, left+dup, right);
         s = r->low;
@@ -208,7 +215,7 @@ split_match_expect_1d(struct snode *n, int dim, struct cut_aux *aux)
             }
 
             right = n->ruleset.num - left;
-            curr_me = (right+left + dup)/2.;
+            curr_me = split_match_expect_heuristic(left + dup, right);
             find_min_me_do(&min_me, &split, n->r, \
                     curr_me, e, left+dup, right);
         }
@@ -281,13 +288,11 @@ split_match_build_childs(struct snode *n, struct cut_aux *cut_aux)
     struct range1d min_r[2];
     int min_dim = -1, i;
 
-    /* 
-    if(n->ruleset.num < BUCKETSIZE)
+    if(memory_constraints && n->ruleset.num <= BUCKETSIZE) {
         split_disable_snode(n);
-    else
+        return;
+    } else
         split_enable_snode(n);
-    */
-    split_enable_snode(n);
 
     for(i = 0; i < DIM; i ++ ) {
         me = split_match_expect_1d(n, i, cut_aux); 
@@ -499,7 +504,6 @@ split_fits_bs(struct cut_aux *aux, int dim)
 
     return true;
 }
-
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[SPLIT_CUT].aux_init = split_aux_init;
@@ -508,5 +512,4 @@ __attribute__((constructor)) static void register_cut_method(void)
     cuts[SPLIT_CUT].mem_quant = split_mem_quant;
     cuts[SPLIT_CUT].all_fits_bs = split_fits_bs;
 }
-
 

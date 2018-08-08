@@ -47,7 +47,17 @@ static void get_rule_hist(rule_set_t *ruleset, int dim, struct rule_hist *hist)
 
 static double get_match_expect(struct rule_hist *hist)
 {
-    return (double)hist->rules/hist->childs;
+    //return (double)hist->rules/hist->childs;
+
+    int i;
+    double ret = 0;
+    for(i = 0; i < CHILDCOUNT; i ++) {
+        if(hist->child_rulecount[i]) {
+            ret += (double)(hist->child_rulecount[i] * \
+                    hist->child_rulecount[i])/hist->rules;
+        }
+    }
+    return ret;
 }
 
 static double even_match_expect(struct cnode *n, int dim, struct cut_aux *aux)
@@ -282,7 +292,6 @@ static bool even_fits_bs(struct cut_aux *aux, int dim)
     }
     return true;
 }
-
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[BITMAP_CUT].aux_init = even_init;
