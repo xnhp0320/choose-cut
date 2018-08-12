@@ -321,6 +321,22 @@ even_traverse(struct cnode *curr, void (*traverse_func)(struct cnode *n, void *a
     }
 }
 
+static int
+even_count_childs(struct cnode *node)
+{
+    if(!node->leaf) {
+        return __builtin_popcountll(node->mb.external) + \
+            __builtin_popcountll(node->mb.internal);
+    } 
+
+    return 0;
+}
+
+static void
+even_set_child_ptr(struct cnode *n, struct cnode *c, struct cnode *childs)
+{
+    c->mb.child_ptr = childs + __builtin_popcountll(n->mb.internal);
+}
 
 __attribute__((constructor)) static void register_cut_method(void)
 {
@@ -330,6 +346,8 @@ __attribute__((constructor)) static void register_cut_method(void)
     cuts[BITMAP_CUT].mem_quant = even_mem_quant;
     cuts[BITMAP_CUT].all_fits_bs = even_fits_bs;
     cuts[BITMAP_CUT].traverse = even_traverse;
+    cuts[BITMAP_CUT].count_childs = even_count_childs;
+    cuts[BITMAP_CUT].set_child_ptr = even_set_child_ptr;
 }
 
 

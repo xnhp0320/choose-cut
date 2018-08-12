@@ -541,6 +541,20 @@ split_traverse(struct cnode *curr, void (*traverse_func)(struct cnode *n, void *
     }
 }
 
+static int
+split_count_childs(struct cnode *n)
+{
+    if(!n->leaf)
+        return __builtin_popcount(n->sp.shape);
+    return 0;
+}
+
+static void
+split_set_child_ptr(struct cnode *n, struct cnode *c, struct cnode *childs)
+{
+    c->sp.child_ptr = childs;
+}
+
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[SPLIT_CUT].aux_init = split_aux_init;
@@ -549,5 +563,7 @@ __attribute__((constructor)) static void register_cut_method(void)
     cuts[SPLIT_CUT].mem_quant = split_mem_quant;
     cuts[SPLIT_CUT].all_fits_bs = split_fits_bs;
     cuts[SPLIT_CUT].traverse = split_traverse;
+    cuts[SPLIT_CUT].count_childs = split_count_childs;
+    cuts[SPLIT_CUT].set_child_ptr = split_set_child_ptr;
 }
 

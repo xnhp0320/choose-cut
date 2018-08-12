@@ -159,12 +159,46 @@ void get_tree_info(struct cnode *root)
     LOG("RULES %d\n", info.rule_cnt);
     LOG("max Depth %d\n", info.max_depth);
 
-    info.av_depth = (float)info.depth_cnt / info.rule_cnt; 
-    info.av_access = (float)info.access_cnt / info.rule_cnt; 
+    info.av_depth = (float)info.depth_cnt / info.leaf_cnt; 
+    info.av_access = (float)info.access_cnt / info.leaf_cnt; 
 
     LOG("av depth %.2f\n", info.av_depth);
     LOG("av access %.2f\n", info.av_access);
 
+}
+
+struct ct_info {
+    ctree_t ct;
+    int copied;
+};
+
+static
+void compact_traverse(struct cnode *n, void *arg, int depth)
+{
+    struct ct_info *ci = (struct ct_info*)arg;
+    struct cnode *copied_cn;
+
+    darray_append(ci->ct, *n);
+    ci->copied ++;
+
+    if(!n->leaf) {
+        int childs = cuts[n->type].count_childs(n);
+        struct cnode *dest = darray_make_room(ci->ct, childs);
+        copied_cn = (struct cnode*)&darray_item(ci->ct, ci->copied);
+
+        cuts[n->type].set_child_ptr(n, copied_cn, dest);
+        ci->ct.size += childs;
+    }
+}
+
+ctree_t compact(struct cnode *root)
+{
+    struct ct_info ci = {.copied = 0};
+    darray_init(ci.ct);
+
+    traverse(root, compact_traverse, &ci, 0);
+    LOG("%d nodes copied\n", ci.copied);
+    return ci.ct;
 }
 
 

@@ -96,6 +96,8 @@ struct cut_method {
     int (*mem_quant)(struct cut_aux *aux, int dim);
     bool (*all_fits_bs)(struct cut_aux *aux, int dim);
     void (*traverse)(struct cnode *node, void (*traverse_func)(struct cnode *n, void *arg, int depth), void *arg, int depth);
+    int (*count_childs)(struct cnode *n);
+    void (*set_child_ptr)(struct cnode *n, struct cnode *c, struct cnode *childs);
 };
 
 enum cut_type {

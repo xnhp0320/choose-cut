@@ -1,6 +1,7 @@
 #ifndef __CUT_H__
 #define __CUT_H__
 #include "cut-inl.h"
+#include <ccan/darray/darray.h>
 
 void cut(struct cnode *root);
 int lsearch(rule_set_t *ruleset, struct flow *flow);
@@ -21,4 +22,7 @@ struct ctree_info {
 
 void get_tree_info(struct cnode *root);
 
+typedef darray(struct cnode) ctree_t;
+
+ctree_t compact(struct cnode *root);
 #endif

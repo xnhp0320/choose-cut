@@ -147,7 +147,10 @@ int main(int argc, char *argv[])
     cut(&root);
     get_tree_info(&root);
 
+    ctree_t ct = compact(&root);
+    struct cnode *croot = &darray_item(ct, 0);
+
     sample_testing(&root, &ruleset);
-    sample_perf(&root, &ruleset);
+    sample_perf(croot, &ruleset);
     return 0;
 }
