@@ -56,11 +56,14 @@ prefix_iter_t range_to_prefix_iter(range_t *range)
 }
 
 
-prefix_iter_t get_next_prefix_iter(prefix_iter_t *curr)
+prefix_iter_t get_next_prefix_iter(prefix_iter_t *curr, int *flag)
 {
     prefix_iter_t iter = {0};
-    if(is_empty_prefix_iter(curr))
+    if(is_empty_prefix_iter(curr)) {
+        *flag = 0;
         return iter;
+    }
+    *flag = 1;
 
     iter.start = curr->end + 1;
     iter._end = curr->_end;

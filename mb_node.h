@@ -19,11 +19,6 @@ struct mb_node{
     void     *child_ptr;
 }__attribute__((aligned(8)));
 
-static inline int count_ones(uint64_t bitmap, uint8_t pos)
-{
-    return __builtin_popcountll(bitmap >> pos) - 1;
-}
-
 static inline int count_children(uint64_t bitmap)
 {
     return __builtin_popcountll(bitmap);
@@ -65,7 +60,47 @@ static inline uint64_t test_bit(uint64_t bitmap, int pos)
     return (bitmap & (1ULL << pos));
 }
 
-int tree_function(uint64_t bitmap, uint8_t stride);
+static inline uint64_t test_bitmap(uint64_t bitmap, int pos)
+{
+    return (bitmap & (1ULL << pos));
+}
+
+#ifdef FAST_TREE_FUNCTION
+extern uint64_t fct[1<<(STRIDE - 1)];
+extern int pos2cidr[1<<STRIDE];
+static inline int tree_function(uint64_t bitmap, uint8_t stride, int *cidr)
+{
+    uint64_t ret;
+    int pos;
+
+    ret = fct[(stride>>1)] & bitmap;
+    if(ret){
+        pos = __builtin_clzll(ret);
+        pos = BITMAP_BITS - 1 - pos;
+        *cidr = pos2cidr[pos];
+        return pos;
+    } else
+        return -1;
+}
+
+#else
+static inline int tree_function(uint64_t bitmap, uint8_t stride, int *cidr)
+{
+    int i;
+    int pos;
+    if (bitmap == 0ULL)
+        return -1;
+    for(i=STRIDE-1;i>=0;i--){
+        stride >>= 1;
+        pos = count_inl_bitmap(stride, i); 
+        if (test_bitmap(bitmap, pos)){
+            *cidr = i;
+            return pos;
+        }
+    }
+    return -1;
+}
+#endif
 __attribute__((constructor)) void fast_lookup_init(void);
 #endif
 

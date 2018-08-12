@@ -1,6 +1,8 @@
 #include "cut.h"
 #include "utils-inl.h"
 #include "mem.h"
+#include "cut-split.h"
+#include "cut-bitmap.h"
 
 static int node_cnt;
 static int leaf_cnt;
@@ -20,7 +22,7 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
         n->leaf = 1;
         leaf_cnt++;
         rule_cnt += n->ruleset.num;
-        LOG("leaf depth %d\n", depth);
+        //LOG("leaf depth %d\n", depth);
         depth --;
         return;
     }
@@ -76,8 +78,9 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
     }
 
 
-    LOG("Choose %d Cut method %d\n", chose_dim[chose_t], chose_t);    
+    //LOG("Choose %d Cut method %d\n", chose_dim[chose_t], chose_t);    
     n->dim = chose_dim[chose_t];
+    n->type = chose_t;
     cuts[chose_t].cut_node(n, chose_dim[chose_t], aux);
     depth --;
 }
@@ -95,6 +98,50 @@ void cut(struct cnode *root)
     LOG("RULES %d\n", rule_cnt);
     LOG("DEPTH %d, max Depth %d\n", depth, max_depth);
     
+}
+
+int lsearch(rule_set_t *ruleset, struct flow *flow)
+{
+    int i;
+    for(i=0;i<ruleset->num;i++) {
+        if(flow->key[0] >= ruleset->ruleList[i].range[0][0] 
+                && flow->key[0] <= ruleset->ruleList[i].range[0][1]
+                && flow->key[1] >= ruleset->ruleList[i].range[1][0]
+                && flow->key[1] <= ruleset->ruleList[i].range[1][1]
+                && flow->key[2] >= ruleset->ruleList[i].range[2][0]
+                && flow->key[2] <= ruleset->ruleList[i].range[2][1]
+#if DIM == 5 
+                && flow->key[3] >= ruleset->ruleList[i].range[3][0]
+                && flow->key[3] <= ruleset->ruleList[i].range[3][1]
+                && flow->key[4] >= ruleset->ruleList[i].range[4][0]
+                && flow->key[4] <= ruleset->ruleList[i].range[4][1]
+#endif
+          ){
+            return ruleset->ruleList[i].pri;
+        }
+    }
+
+    return -1;
+}
+
+
+int search(struct cnode *root, struct flow *flow)
+{
+    struct cnode *n = root;
+    while(n && !n->leaf) {
+        switch (n->type) {
+            case BITMAP_CUT:
+                n = even_search(n, flow);
+                break;
+            case SPLIT_CUT:
+                n = split_search(n, flow);
+                break;
+        }
+    }
+
+    if(!n)
+        return -1;
+    return lsearch(&n->ruleset, flow);
 }
 
 

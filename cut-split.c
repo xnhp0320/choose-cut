@@ -396,6 +396,33 @@ split_cut_recursive(struct cnode *cn, int childs, struct cut_aux *aux)
         cut_node(&cn[i], aux);
     }
 }
+static int
+split_fill(struct sp_node *sp, struct stree *tree)
+{
+    int childs = 2;
+    sp->root_split = tree->root.r[0].high;
+    sp->shape |= 0x5;
+    
+    if(split_snode_enabled(&tree->left)) {
+        sp->left_split = tree->left.r[0].high;
+        sp->dim_left = tree->left.dim;
+        sp->shape |= 0x2;
+        childs++;
+    } else {
+        sp->dim_left = DIM;
+    }
+    
+    if(split_snode_enabled(&tree->right)) {
+        sp->right_split = tree->right.r[0].high;
+        sp->dim_right = tree->right.dim;
+        sp->shape |= 0x8;
+        childs++;
+    } else {
+        sp->dim_right = DIM;
+    }
+
+    return childs;
+}
 
 static int
 split_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
@@ -407,14 +434,7 @@ split_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
     struct stree *tree = &aux->strees[dim];
     struct sp_node *sp = &n->sp;
 
-    int childs = 2;
-    if(split_snode_enabled(&tree->left)) {
-        childs++;
-    }
-    if(split_snode_enabled(&tree->right)) {
-        childs++;
-    }
-
+    int childs = split_fill(sp, tree);    
     sp->child_ptr = bc_calloc(childs, sizeof(*n));
     if(!sp->child_ptr) {
         PANIC("Memory alloc fail\n");

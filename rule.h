@@ -33,6 +33,10 @@ typedef struct rule_set_s
 	rule_t*			ruleList; /* rules in the set */
 } rule_set_t;
 
+struct flow {
+    uint32_t key[DIM];
+};
+
 typedef unsigned int range_t;
 
 
@@ -50,7 +54,7 @@ int rule_set_init(rule_set_t *ruleset, int num);
 void rule_set_free(rule_set_t *ruleset);
 
 prefix_iter_t range_to_prefix_iter(range_t *range);
-prefix_iter_t get_next_prefix_iter(prefix_iter_t *curr);
+prefix_iter_t get_next_prefix_iter(prefix_iter_t *curr, int *flag);
 
 static inline int is_empty_prefix_iter(prefix_iter_t *iter)
 {

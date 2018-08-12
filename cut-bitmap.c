@@ -2,7 +2,7 @@
 #include "utils-inl.h"
 #include "mem.h"
 
-static int dim_bits[DIM] = { 32, 32, 16, 16, 8};
+int dim_bits[DIM] = { 32, 32, 16, 16, 8};
 
 static void get_rule_hist(rule_set_t *ruleset, int dim, struct rule_hist *hist)
 {
@@ -11,6 +11,7 @@ static void get_rule_hist(rule_set_t *ruleset, int dim, struct rule_hist *hist)
     prefix_iter_t iter;
     prefix_t p;
     int idx;
+    int flag;
 
     memset(hist, 0, sizeof(*hist));
     for(i = 0; i < ruleset->num; i ++) {
@@ -24,8 +25,8 @@ static void get_rule_hist(rule_set_t *ruleset, int dim, struct rule_hist *hist)
                 idx = count_inl_bitmap(p.prefix >> (dim_bits[dim] - p.len), p.len); 
             }
             hist->child_rulecount[idx] ++;
-            iter = get_next_prefix_iter(&iter); 
-        }while(!is_empty_prefix_iter(&iter));
+            iter = get_next_prefix_iter(&iter, &flag); 
+        }while(flag);
     }
 
     for(i = 0; i < CHILDCOUNT; i++) {
@@ -62,6 +63,8 @@ static double get_match_expect(struct rule_hist *hist)
 
 static double even_match_expect(struct cnode *n, int dim, struct cut_aux *aux)
 {
+    //if(n == 0x858300)
+    //    LOG("HELLO");
     get_rule_hist(&n->ruleset, dim, &aux->hist[dim]);
     return get_match_expect(&aux->hist[dim]);
 }
@@ -157,6 +160,7 @@ static void push_rules_even(struct cnode *curr, int dim, struct cut_aux *aux)
     int idx;
     rule_t rule;
     prefix_t p;
+    int flag;
 
     for(i = 0; i < curr->ruleset.num; i ++) {
         r = curr->ruleset.ruleList[i].range[dim];
@@ -194,8 +198,8 @@ static void push_rules_even(struct cnode *curr, int dim, struct cut_aux *aux)
                 push_inl_rules_even(idx, dim, curr, &rule, aux);
             }
 
-            iter = get_next_prefix_iter(&iter); 
-        }while(!is_empty_prefix_iter(&iter));
+            iter = get_next_prefix_iter(&iter, &flag); 
+        }while(flag);
     }
 
     //bc_free(curr->ruleset.ruleList);
