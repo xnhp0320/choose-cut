@@ -145,6 +145,7 @@ int main(int argc, char *argv[])
     memset(&root, 0, sizeof(root));
     rule_set_copy(&root.ruleset, &ruleset);
     cut(&root);
+    get_tree_info(&root);
 
     sample_testing(&root, &ruleset);
     sample_perf(&root, &ruleset);

@@ -1,6 +1,7 @@
 #include "cut-bitmap.h"
 #include "utils-inl.h"
 #include "mem.h"
+#include "cut.h"
 
 int dim_bits[DIM] = { 32, 32, 16, 16, 8};
 
@@ -296,6 +297,31 @@ static bool even_fits_bs(struct cut_aux *aux, int dim)
     }
     return true;
 }
+
+static void
+even_traverse(struct cnode *curr, void (*traverse_func)(struct cnode *n, void *arg, int depth), void *arg, int depth)
+{
+    uint64_t mask = 0;
+    int bit_pos;
+    struct cnode *n;
+
+    while(curr->mb.internal ^ mask) {
+        bit_pos = __builtin_ctzll(curr->mb.internal ^ mask);
+        n = next_inl(curr, bit_pos);
+        traverse(n, traverse_func, arg, depth + 1);
+        set_bit(&mask, bit_pos);
+    }
+
+    mask = 0;
+    while(curr->mb.external ^ mask) {
+        bit_pos = __builtin_ctzll(curr->mb.external ^ mask);
+        n = next_exl(curr, bit_pos);
+        traverse(n, traverse_func, arg, depth + 1);
+        set_bit(&mask, bit_pos);
+    }
+}
+
+
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[BITMAP_CUT].aux_init = even_init;
@@ -303,6 +329,7 @@ __attribute__((constructor)) static void register_cut_method(void)
     cuts[BITMAP_CUT].match_expect = even_match_expect;
     cuts[BITMAP_CUT].mem_quant = even_mem_quant;
     cuts[BITMAP_CUT].all_fits_bs = even_fits_bs;
+    cuts[BITMAP_CUT].traverse = even_traverse;
 }
 
 

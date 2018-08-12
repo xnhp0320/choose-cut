@@ -1,6 +1,7 @@
 #include "cut-split.h"
 #include "utils-inl.h"
 #include "mem.h"
+#include "cut.h"
 
 
 
@@ -351,8 +352,8 @@ split_match_expect(struct cnode *node, int dim, struct cut_aux *cut_aux)
     struct snode *n = &aux->strees[dim].root;
     double me;
 
-    if(node == 0x637350)
-        LOG("HELLO");
+    //if(node == 0x637350)
+    //    LOG("HELLO");
 
     n->ruleset = node->ruleset;
     n->dim = dim;
@@ -427,8 +428,8 @@ split_fill(struct sp_node *sp, struct stree *tree)
 static int
 split_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
 {
-    if(n == 0x635e80)
-        LOG("HELLO");
+    //if(n == 0x635e80)
+    //    LOG("HELLO");
 
     struct split_aux *aux = &cut_aux->split_aux;
     struct stree *tree = &aux->strees[dim];
@@ -524,6 +525,22 @@ split_fits_bs(struct cut_aux *aux, int dim)
 
     return true;
 }
+
+static void
+split_traverse(struct cnode *curr, void (*traverse_func)(struct cnode *n, void *arg, int depth), void *arg, int depth)
+{
+    uint8_t mask = 0;
+    struct cnode *n;
+    int bit_pos;
+
+    while(curr->sp.shape ^ mask) {
+        bit_pos = __builtin_ctz(curr->sp.shape ^ mask);
+        n = split_next(curr, bit_pos); 
+        traverse(n, traverse_func, arg, depth + 1);
+        mask |= (1 << bit_pos);
+    }
+}
+
 __attribute__((constructor)) static void register_cut_method(void)
 {
     cuts[SPLIT_CUT].aux_init = split_aux_init;
@@ -531,5 +548,6 @@ __attribute__((constructor)) static void register_cut_method(void)
     cuts[SPLIT_CUT].match_expect = split_match_expect;
     cuts[SPLIT_CUT].mem_quant = split_mem_quant;
     cuts[SPLIT_CUT].all_fits_bs = split_fits_bs;
+    cuts[SPLIT_CUT].traverse = split_traverse;
 }
 

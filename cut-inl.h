@@ -95,6 +95,7 @@ struct cut_method {
     double (*match_expect)(struct cnode *n, int dim, struct cut_aux *aux);
     int (*mem_quant)(struct cut_aux *aux, int dim);
     bool (*all_fits_bs)(struct cut_aux *aux, int dim);
+    void (*traverse)(struct cnode *node, void (*traverse_func)(struct cnode *n, void *arg, int depth), void *arg, int depth);
 };
 
 enum cut_type {

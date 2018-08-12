@@ -6,6 +6,7 @@
  * user 
  */
 #include <stdlib.h>
+#include <jemalloc/jemalloc.h>
 
 void *bc_calloc(size_t, size_t);
 void *bc_realloc(void *, size_t);

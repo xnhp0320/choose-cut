@@ -4,26 +4,13 @@
 #include "cut-split.h"
 #include "cut-bitmap.h"
 
-static int node_cnt;
-static int leaf_cnt;
-static int rule_cnt;
-static int depth;
-static int max_depth;
 
 void cut_node(struct cnode *n, struct cut_aux *aux)
 {
-    node_cnt ++;
 
-    depth++;
-    if(depth > max_depth)
-        max_depth = depth;
 
     if(n->ruleset.num <= BUCKETSIZE) {
         n->leaf = 1;
-        leaf_cnt++;
-        rule_cnt += n->ruleset.num;
-        //LOG("leaf depth %d\n", depth);
-        depth --;
         return;
     }
     
@@ -82,7 +69,6 @@ void cut_node(struct cnode *n, struct cut_aux *aux)
     n->dim = chose_dim[chose_t];
     n->type = chose_t;
     cuts[chose_t].cut_node(n, chose_dim[chose_t], aux);
-    depth --;
 }
 
 void cut(struct cnode *root)
@@ -93,10 +79,6 @@ void cut(struct cnode *root)
         cuts[t].aux_init(root, &aux);
 
     cut_node(root, &aux);
-    LOG("NODE %d\n", node_cnt);
-    LOG("LEAF %d\n", leaf_cnt);
-    LOG("RULES %d\n", rule_cnt);
-    LOG("DEPTH %d, max Depth %d\n", depth, max_depth);
     
 }
 
@@ -142,6 +124,47 @@ int search(struct cnode *root, struct flow *flow)
     if(!n)
         return -1;
     return lsearch(&n->ruleset, flow);
+}
+
+void traverse(struct cnode *root, void(*traverse_func)(struct cnode *cnode, void *arg, int depth), void *arg, int depth)
+{
+    traverse_func(root, arg, depth);
+    cuts[root->type].traverse(root, traverse_func, arg, depth);
+}
+
+static
+void get_tree_info_traverse(struct cnode *n, void *arg, int depth)
+{
+    struct ctree_info *info = (struct ctree_info*)arg;
+
+    if(depth > info->max_depth)
+        info->max_depth = depth;
+
+    info->node_cnt++;
+    if(n->leaf) {
+        info->leaf_cnt ++;
+        info->rule_cnt += n->ruleset.num;
+        info->depth_cnt += depth;
+        info->access_cnt += (depth + n->ruleset.num);
+    }
+}
+
+void get_tree_info(struct cnode *root)
+{
+    struct ctree_info info = {0};
+    traverse(root, get_tree_info_traverse, &info, 0);
+
+    LOG("NODE %d\n", info.node_cnt);
+    LOG("LEAF %d\n", info.leaf_cnt);
+    LOG("RULES %d\n", info.rule_cnt);
+    LOG("max Depth %d\n", info.max_depth);
+
+    info.av_depth = (float)info.depth_cnt / info.rule_cnt; 
+    info.av_access = (float)info.access_cnt / info.rule_cnt; 
+
+    LOG("av depth %.2f\n", info.av_depth);
+    LOG("av access %.2f\n", info.av_access);
+
 }
 
 
