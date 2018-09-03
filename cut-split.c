@@ -1,61 +1,13 @@
+#include "cut-inl.h"
 #include "cut-split.h"
 #include "utils-inl.h"
 #include "mem.h"
 #include "cut.h"
 
-
-
-
-static bool split_aux_heap_less(const void *a, const void *b)
-{
-    struct range1d *r1 = (struct range1d *)a;
-    struct range1d *r2 = (struct range1d *)b;
-
-    return r1->high < r2->high;
-}
-
-static int _range_compare(const void *a, const void *b)
-{
-    const struct range1d *r1 = (const struct range1d*)a;
-    const struct range1d *r2 = (const struct range1d*)b;
-
-    if(r1->low != r2->low)
-        if(r1->low < r2->low)
-            return -1;
-        else 
-            return 1;
-    else if (r1->high != r2->high) {
-        if(r1->high < r2->high)
-            return -1;
-        else
-            return 1;
-    }
-    return 0;
-}
-
-static int unique_ranges(struct range1d *ranges, int num)
-{
-    int i; 
-    int unique_num = 1;
-    for(i = 1; i < num; i ++) {
-        if(ranges[i].low != ranges[unique_num -1].low \
-                || ranges[i].high != ranges[unique_num -1].high) {
-            ranges[unique_num].low = ranges[i].low;
-            ranges[unique_num].high = ranges[i].high;
-            unique_num ++;
-        } else {
-            ranges[unique_num -1].weight ++;
-        }
-    }
-    return unique_num;
-}
-
-
-
 static int 
 split_aux_init(struct cnode *n, struct cut_aux* aux)
 {
-    aux->split_aux.h = heap_init(split_aux_heap_less);
+    aux->split_aux.h = heap_init(aux_heap_less);
     if(!aux->split_aux.h) {
         return -1;
     }
@@ -475,6 +427,11 @@ split_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
     } else {
         rule_set_copy(&cn[i].ruleset, &tree->right.ruleset);
     }
+
+    bc_free(n->ruleset.ruleList);
+    n->ruleset.ruleList = NULL;
+    n->ruleset.num = 0;
+    n->ruleset.cap = 0;
     
     split_cut_recursive(cn, childs, cut_aux);
 

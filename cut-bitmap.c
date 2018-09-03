@@ -47,20 +47,6 @@ static void get_rule_hist(rule_set_t *ruleset, int dim, struct rule_hist *hist)
     }
 }
 
-static double get_match_expect(struct rule_hist *hist)
-{
-    //return (double)hist->rules/hist->childs;
-
-    int i;
-    double ret = 0;
-    for(i = 0; i < CHILDCOUNT; i ++) {
-        if(hist->child_rulecount[i]) {
-            ret += (double)(hist->child_rulecount[i] * \
-                    hist->child_rulecount[i])/hist->rules;
-        }
-    }
-    return ret;
-}
 
 static double even_match_expect(struct cnode *n, int dim, struct cut_aux *aux)
 {
@@ -203,19 +189,10 @@ static void push_rules_even(struct cnode *curr, int dim, struct cut_aux *aux)
         }while(flag);
     }
 
-    //bc_free(curr->ruleset.ruleList);
-    //curr->ruleset.num = 0;
-}
-
-static inline int roundup_log2(int n)
-{
-    int i = 0;
-    while(n) {
-        n = (n-1)/2;
-        i ++;
-    }
-    
-    return i;
+    bc_free(curr->ruleset.ruleList);
+    curr->ruleset.ruleList = NULL;
+    curr->ruleset.num = 0;
+    curr->ruleset.cap = 0;
 }
 
 static

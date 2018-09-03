@@ -27,10 +27,19 @@ struct sp_node {
     void *child_ptr;
 };
 
+struct hi_node {
+    uint32_t start;
+    uint32_t shift;
+    uint64_t bitmap;
+
+    void * child_ptr;
+};
+
 struct cnode {
     union {
         struct mb_node mb;
         struct sp_node sp;
+        struct hi_node hn;
     };
 
     union{
@@ -43,12 +52,6 @@ struct cnode {
         };
     };
     rule_set_t ruleset;
-};
-
-struct range1d {
-    unsigned int low;
-    unsigned int high;
-    unsigned int weight;
 };
 
 struct snode {
@@ -74,11 +77,21 @@ struct split_aux {
     struct stree strees[DIM];
 };
 
+struct hi_aux {
+    d_ranges_t ranges;
+    struct heap *h;
+    struct rule_hist hist[DIM];
+    uint32_t shift[DIM];
+    uint32_t start[DIM];
+};
+
 struct cut_aux {
     /* bitmap aux */
     struct rule_hist hist[DIM];
     /* split aux */
     struct split_aux split_aux; 
+    /* hi cut*/
+    struct hi_aux hi_aux;
 };
 
 void remove_redund(rule_set_t *ruleset);
@@ -103,13 +116,16 @@ struct cut_method {
 enum cut_type {
     BITMAP_CUT,
     SPLIT_CUT,
+    HI_CUT,
     MAX_CUT_TYPE
 };
 
 extern struct cut_method cuts[MAX_CUT_TYPE];
 void cut_node(struct cnode *n, struct cut_aux *aux);
 
-
 extern bool memory_constraints;
+double get_match_expect(struct rule_hist *hist);
 
+int roundup_log2(int n);
+bool aux_heap_less(const void *a, const void *b);
 #endif

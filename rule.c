@@ -98,5 +98,41 @@ prefix_t get_prefix(prefix_iter_t *iter, int bits)
     return p;
 }
 
+int _range_compare(const void *a, const void *b)
+{
+    const struct range1d *r1 = (const struct range1d*)a;
+    const struct range1d *r2 = (const struct range1d*)b;
+
+    if(r1->low != r2->low)
+        if(r1->low < r2->low)
+            return -1;
+        else 
+            return 1;
+    else if (r1->high != r2->high) {
+        if(r1->high < r2->high)
+            return -1;
+        else
+            return 1;
+    }
+    return 0;
+}
+
+int unique_ranges(struct range1d *ranges, int num)
+{
+    int i;
+    int unique_num = 1;
+    for(i = 1; i < num; i ++) {
+        if(ranges[i].low != ranges[unique_num -1].low \
+                || ranges[i].high != ranges[unique_num -1].high) {
+            ranges[unique_num].low = ranges[i].low;
+            ranges[unique_num].high = ranges[i].high;
+            unique_num ++;
+        } else {
+            ranges[unique_num -1].weight ++;
+        }
+    }
+    return unique_num;
+}
+
 
 

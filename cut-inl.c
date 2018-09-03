@@ -26,3 +26,42 @@ void remove_redund(rule_set_t *ruleset)
 }
 
 bool memory_constraints = true; 
+
+double get_match_expect(struct rule_hist *hist)
+{
+    //return (double)hist->rules/hist->childs;
+
+    int i;
+    double ret = 0;
+    for(i = 0; i < CHILDCOUNT; i ++) {
+        if(hist->child_rulecount[i]) {
+            ret += (double)(hist->child_rulecount[i] * \
+                    hist->child_rulecount[i])/hist->rules;
+        }
+    }
+    return ret;
+}
+
+int roundup_log2(int n)
+{
+    int i = 0;
+    assert(n!= 0);
+
+    while(n) {
+        n = (n-1)/2;
+        i ++;
+    }
+    
+    return i;
+}
+
+bool aux_heap_less(const void *a, const void *b)
+{
+    struct range1d *r1 = (struct range1d *)a;
+    struct range1d *r2 = (struct range1d *)b;
+
+    return r1->high < r2->high;
+}
+
+
+

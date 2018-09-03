@@ -39,6 +39,11 @@ struct flow {
 
 typedef unsigned int range_t;
 
+struct range1d {
+    unsigned int low;
+    unsigned int high;
+    unsigned int weight;
+};
 
 /*-----------------------------------------------------------------------------
  *  function declaration
@@ -85,5 +90,7 @@ static inline void range_to_prefix(prefix_t *p, range_t *r, int bits)
     p->prefix = r[0];
 }
 int rule_set_copy(rule_set_t *dest, rule_set_t *src);
+int unique_ranges(struct range1d *ranges, int num);
+int _range_compare(const void *a, const void *b);
 
 #endif
