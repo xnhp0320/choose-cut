@@ -3,7 +3,8 @@
 #include "cut.h"
 
 static double
-hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, uint32_t seg, struct heap *h)
+hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, uint32_t seg, \
+                struct heap *h, uint8_t (node_r)[][2])
 {
     int i,j;
     uint64_t curr = (uint64_t)bound->low + seg;
@@ -12,11 +13,15 @@ hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, u
 
     struct range1d *r, *top, *o;
     memset(hist, 0, sizeof(*hist));
+    memset(node_r, 0, HICHILD *2 );
 
     r = &darray_item(ranges, 0);
     heap_push(h, r);
     i = 1;
-    int new_flag;
+
+    int prev_new_ends = 0;
+    int new_start = 0, new_ends = 0;
+    int new_child = 0;
 
     while(i < darray_size(ranges) || h->len != 0) {
         if(i < darray_size(ranges)) {
@@ -24,7 +29,7 @@ hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, u
             if((uint64_t)(r->low) < curr) {
                 heap_push(h, r);
                 i++;
-                new_flag = 1;
+                new_start = 1;
                 continue;
             }
         }
@@ -33,6 +38,7 @@ hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, u
                 (uint64_t)((top = (struct range1d *)heap_peek(h))->high) < curr) { 
             rules += top->weight;
             heap_pop(h);
+            new_ends = 1;
         }
 
         /* the left in the heap are ranges that r->low < curr but 
@@ -44,11 +50,35 @@ hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, u
             }
         }
 
-        if(new_flag) {
+        if(new_start) {
+            new_child = 1;
+        } else {
+            /* if we do not have new start, we may have new ends
+             * rule ending in this seg, means the next seg will 
+             * not see this rule, so the next seg should be a 
+             * new child, thus, whether this seg will generate 
+             * a child or not dpends on the previous seg has 
+             * new ends or not.
+             *
+             * The first seg will always generate a new child
+             * as the boundary starts with one of the ranges' low
+             * Thus, a rule new start event will always
+             * happend in the first seg.
+             */
+            new_child = prev_new_ends;
+        }
+        prev_new_ends = new_ends;
+        new_start = 0;
+        new_ends = 0;
+
+        if(new_child) {
             hist->child_rulecount[childs] = rules;
             hist->rules += rules;
+            node_r[childs][0] = (childs == 0) ? 0 : node_r[childs-1][1] + 1;
+            node_r[childs][1] = node_r[childs][0];
             childs ++;
-            new_flag = 0;
+        } else {
+            node_r[childs - 1][1] ++;
         }
 
         rules = 0;
@@ -94,7 +124,7 @@ hi_get_rule_hist(rule_set_t *ruleset, int dim, struct cut_aux *cut_aux)
     double me;
     double prev_me = 0.0;
 
-    me = hi_get_me_1d(ranges, &bound, hist, (1ULL << shift), aux->h); 
+    me = hi_get_me_1d(ranges, &bound, hist, (1ULL << shift), aux->h, aux->node_r[dim]); 
     aux->start[dim] = bound.low;
 
     // try 4, 8, 16, 32, 64
@@ -106,7 +136,7 @@ hi_get_rule_hist(rule_set_t *ruleset, int dim, struct cut_aux *cut_aux)
         div*=2;
         if(div > 64) break;
 
-        me = hi_get_me_1d(ranges, &bound, hist, (1ULL << shift), aux->h);
+        me = hi_get_me_1d(ranges, &bound, hist, (1ULL << shift), aux->h, aux->node_r[dim]);
     } while(div<=64 && me < prev_me && me - prev_me < 1);
 
 

@@ -8,6 +8,7 @@
 
 #define CHILDCOUNT ((1<<STRIDE) + (1<<STRIDE) - 1)
 #define INL_OFFSET ((1<< STRIDE) -1)
+#define HICHILD ((1<<STRIDE))
 struct rule_hist{
     int child_rulecount[CHILDCOUNT];
     int childs;
@@ -83,6 +84,7 @@ struct hi_aux {
     struct rule_hist hist[DIM];
     uint32_t shift[DIM];
     uint32_t start[DIM];
+    uint8_t  node_r[DIM][HICHILD][2];
 };
 
 struct cut_aux {
