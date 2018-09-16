@@ -130,4 +130,7 @@ double get_match_expect(struct rule_hist *hist);
 
 int roundup_log2(int n);
 bool aux_heap_less(const void *a, const void *b);
+
+void
+cut_recursive(struct cnode *cn, int childs, struct cut_aux *aux);
 #endif

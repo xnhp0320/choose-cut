@@ -44,15 +44,13 @@ double get_match_expect(struct rule_hist *hist)
 
 int roundup_log2(int n)
 {
-    int i = 0;
     assert(n!= 0);
+    int shift = 32 - __builtin_clz(n);
 
-    while(n) {
-        n = (n-1)/2;
-        i ++;
-    }
+    if(n == (1UL << (shift -1)))
+        return shift -1;
     
-    return i;
+    return shift;
 }
 
 bool aux_heap_less(const void *a, const void *b)
@@ -62,6 +60,17 @@ bool aux_heap_less(const void *a, const void *b)
 
     return r1->high < r2->high;
 }
+
+void
+cut_recursive(struct cnode *cn, int childs, struct cut_aux *aux)
+{
+    int i;
+    for(i = 0; i < childs; i++) {
+        remove_redund(&cn[i].ruleset);
+        cut_node(&cn[i], aux);
+    }
+}
+
 
 
 

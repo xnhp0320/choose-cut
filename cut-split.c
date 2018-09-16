@@ -340,15 +340,6 @@ split_match_expect(struct cnode *node, int dim, struct cut_aux *cut_aux)
     return split_match_expect_subtree(&aux->strees[dim]);
 }
 
-static void
-split_cut_recursive(struct cnode *cn, int childs, struct cut_aux *aux)
-{
-    int i;
-    for(i = 0; i < childs; i++) {
-        remove_redund(&cn[i].ruleset);
-        cut_node(&cn[i], aux);
-    }
-}
 static int
 split_fill(struct sp_node *sp, struct stree *tree)
 {
@@ -433,7 +424,7 @@ split_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
     n->ruleset.num = 0;
     n->ruleset.cap = 0;
     
-    split_cut_recursive(cn, childs, cut_aux);
+    cut_recursive(cn, childs, cut_aux);
 
     return 0;
 }

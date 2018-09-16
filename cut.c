@@ -3,6 +3,7 @@
 #include "mem.h"
 #include "cut-split.h"
 #include "cut-bitmap.h"
+#include "cut-hi.h"
 
 
 void cut_node(struct cnode *n, struct cut_aux *aux)
@@ -117,6 +118,9 @@ int search(struct cnode *root, struct flow *flow)
                 break;
             case SPLIT_CUT:
                 n = split_search(n, flow);
+                break;
+            case HI_CUT:
+                n = hi_search(n, flow);
                 break;
         }
     }

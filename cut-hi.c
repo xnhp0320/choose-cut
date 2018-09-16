@@ -1,10 +1,12 @@
 #include "cut-inl.h"
 #include "cut-hi.h"
 #include "cut.h"
+#include "mem.h"
+#include "utils-inl.h"
 
 static double
 hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, uint32_t seg, \
-                struct heap *h, uint8_t (node_r)[][2])
+                struct heap *h, uint8_t (node_r)[][2], int div)
 {
     int i,j;
     uint64_t curr = (uint64_t)bound->low + seg;
@@ -19,7 +21,7 @@ hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, u
     heap_push(h, r);
     i = 1;
 
-    int prev_new_ends = 0;
+    int prev_new_ends = 1;
     int new_start = 0, new_ends = 0;
     int new_child = 0;
 
@@ -86,7 +88,20 @@ hi_get_me_1d(d_ranges_t ranges, struct range1d *bound, struct rule_hist *hist, u
     }
     hist->childs = childs;
 
+    /* in case the last segment is merged into the previous 
+     * ones, where we do not have the chance to assign the 
+     * ending segment number.
+     */
+    node_r[childs-1][1] = div - 1; 
     return get_match_expect(hist);
+}
+
+static double
+calc_me_ratio(unsigned int rulenum, unsigned int dup_rules, double me)
+{
+    if(dup_rules != rulenum)
+        return (rulenum - me) / (dup_rules - rulenum);
+    return rulenum - me;
 }
 
 static double 
@@ -119,34 +134,47 @@ hi_get_rule_hist(rule_set_t *ruleset, int dim, struct cut_aux *cut_aux)
     }
 
     uint64_t len = (uint64_t)bound.high - (uint64_t)bound.low + 1;
-    int shift = roundup_log2(len/div);
+    /* if the length is too small, we should not continue  */       
+    if(len < div) {
+        return ruleset->num;
+    }
 
+    int shift = roundup_log2((len + div - 1)/div);
     double me;
-    double prev_me = 0.0;
+    double prev_me;
+    double me_ratio;
+    double prev_me_ratio = 0.0;
+    struct rule_hist tmp_hist;
+    uint8_t node_r[HICHILD][2];
 
-    me = hi_get_me_1d(ranges, &bound, hist, (1ULL << shift), aux->h, aux->node_r[dim]); 
+    me = hi_get_me_1d(ranges, &bound, &tmp_hist, (1ULL << shift), aux->h, node_r, div); 
+    me_ratio = calc_me_ratio(ruleset->num, hist->rules, me); 
+
     aux->start[dim] = bound.low;
 
     // try 4, 8, 16, 32, 64
     do {
         aux->shift[dim] = shift;
+        memcpy(aux->node_r[dim], node_r, HICHILD * 2); 
+        aux->hist[dim] = tmp_hist;
 
-        shift -= 1;
-        prev_me = me;
         div*=2;
-        if(div > 64) break;
+        shift = roundup_log2((len + div -1)/div);
+        prev_me_ratio = me_ratio;
+        prev_me = me;
+        if(div > 64 || len < div || shift == aux->shift[dim]) break;
 
-        me = hi_get_me_1d(ranges, &bound, hist, (1ULL << shift), aux->h, aux->node_r[dim]);
-    } while(div<=64 && me < prev_me && me - prev_me < 1);
+        me = hi_get_me_1d(ranges, &bound, &tmp_hist, (1ULL << shift), aux->h, node_r, div);
+        me_ratio = calc_me_ratio(ruleset->num, hist->rules, me);
+    } while(div<=64 && me_ratio > prev_me_ratio);
 
-
-    return me; 
+    return prev_me; 
 }
 
 static double hi_match_expect(struct cnode *n, int dim, struct cut_aux *aux)
 {
-    //if(n == 0x858300)
-    //    LOG("HELLO");
+    if(n == 0x7ffff5a8dcd0)
+        LOG("HELLO");
 
     return hi_get_rule_hist(&n->ruleset, dim, aux);
 }
@@ -168,7 +196,7 @@ hi_fits_bs(struct cut_aux *aux, int dim)
 static void
 hi_traverse(struct cnode *curr, void (*traverse_func)(struct cnode *n, void *arg, int depth), void *arg, int depth)
 {
-    uint8_t mask = 0;
+    uint64_t mask = 0;
     struct cnode *n;
     int bit_pos;
 
@@ -212,8 +240,110 @@ hi_set_child_ptr(struct cnode *n, struct cnode *c, struct cnode *childs)
     c->hn.child_ptr = childs;
 }
 
+static void
+hi_push_rule(rule_t *r, int dim, struct cnode *childs, struct hi_aux *aux)
+{
+    unsigned int s,e;
+    s = ((r->range[dim][0] - aux->start[dim]) >> aux->shift[dim]); 
+    e = ((r->range[dim][1] - aux->start[dim]) >> aux->shift[dim]);
+
+    int cs = -1, ce = -1;
+    int i;
+
+    for(i = 0; i < aux->hist[dim].childs; i ++) {
+        if(s >= aux->node_r[dim][i][0] && \
+                s <= aux->node_r[dim][i][1] && cs == -1) {
+            cs = i;
+        }
+
+        if(e >= aux->node_r[dim][i][0] && \
+                e <= aux->node_r[dim][i][1] && ce == -1) {
+            ce = i;
+        }
+
+        if(cs != -1 && ce != -1)
+            break;
+    }
+
+    assert(cs <= ce);
+
+    uint64_t trim_s, trim_e;
+
+    for(i = cs; i <= ce ; i++) {
+        rule_t rt = *r;
+        trim_s = trim_e = aux->start[dim];
+        trim_s += aux->node_r[dim][i][0] * (1ULL << aux->shift[dim]);
+        trim_e += (aux->node_r[dim][i][1] + 1) * (1ULL << aux->shift[dim]);
+
+        /* trim the range */
+        if(rt.range[dim][0] < trim_s)
+            rt.range[dim][0] = (uint32_t)trim_s;
+
+        if(rt.range[dim][1] >= trim_e)
+            rt.range[dim][1] = (uint32_t)(trim_e - 1);
+
+        append_rules(&childs[i].ruleset, &rt);
+    }
+}
+
+static void
+hi_set_bitmap(struct cnode *n, int dim, struct hi_aux *aux)
+{
+    /* the bitmap is a like an array storing the XOR of 
+     * the bit indicating whether the adjacent segment contains new rules or not. If
+     * two adjacent segments are the same, the xor equals 0, if 
+     * two ajacent segments are different, the xor equals 1. 
+     * eg. [0, 1] [2, 3] will generate the bitmap: 010, the 
+     * first two has 0, the 2nd and 3rd generate 1, the 3rd and 
+     * the 4th generate 0. 
+     * For N childs, we only have N-1 bits
+     */
+    int i;
+    for(i = 0; i < aux->hist[dim].childs - 1; i ++) {
+        set_bit(&n->hn.bitmap, aux->node_r[dim][i][1]);
+    }
+}
+
+static void
+hi_set_node(struct cnode *n, int dim, struct hi_aux *aux)
+{
+    hi_set_bitmap(n, dim, aux);
+    n->hn.start = aux->start[dim];
+    n->hn.shift = aux->shift[dim];
+}
+
 static int hi_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
 {
+    if(n == 0x7ffff5a8dcd0) 
+        LOG("HELLO");
+
+    struct hi_aux *aux = &cut_aux->hi_aux;
+    struct cnode *childs = bc_calloc(aux->hist[dim].childs, sizeof(*n));
+    if(!childs) {
+        PANIC("Memory alloc fail\n");
+    }
+    n->hn.child_ptr = childs;
+
+    int i;
+    for(i = 0; i < aux->hist[dim].childs; i ++) {
+        rule_set_init(&childs[i].ruleset, aux->hist[dim].child_rulecount[i]);
+    }
+
+    rule_t *r;
+    for(i = 0; i < n->ruleset.num; i ++ ) {
+        r = &n->ruleset.ruleList[i];
+        hi_push_rule(r, dim, childs, aux); 
+    }
+
+    for(i = 0; i < aux->hist[dim].childs; i ++ ) {
+        assert(childs[i].ruleset.num == aux->hist[dim].child_rulecount[i]);
+    }
+
+    hi_set_node(n, dim, aux);
+
+    rule_set_free(&n->ruleset);
+    cut_recursive(childs, aux->hist[dim].childs, cut_aux);
+
     return 0;
 }
 
