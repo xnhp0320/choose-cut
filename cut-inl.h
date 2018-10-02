@@ -38,7 +38,6 @@ struct hi_node {
 
 struct cnode {
     union {
-        struct mb_node mb;
         struct sp_node sp;
         struct hi_node hn;
     };
@@ -116,7 +115,6 @@ struct cut_method {
 };
 
 enum cut_type {
-    BITMAP_CUT,
     SPLIT_CUT,
     HI_CUT,
     MAX_CUT_TYPE
