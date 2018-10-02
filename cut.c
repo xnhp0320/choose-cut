@@ -113,9 +113,9 @@ int search(struct cnode *root, struct flow *flow)
     struct cnode *n = root;
     while(n && !n->leaf) {
         switch (n->type) {
-            case BITMAP_CUT:
-                n = even_search(n, flow);
-                break;
+            //case BITMAP_CUT:
+            //    n = even_search(n, flow);
+            //    break;
             case SPLIT_CUT:
                 n = split_search(n, flow);
                 break;
@@ -150,6 +150,8 @@ void get_tree_info_traverse(struct cnode *n, void *arg, int depth)
         info->rule_cnt += n->ruleset.num;
         info->depth_cnt += depth;
         info->access_cnt += (depth + n->ruleset.num);
+    } else {
+        info->cut_type[n->type] ++;
     }
 }
 
@@ -169,6 +171,12 @@ void get_tree_info(struct cnode *root)
     LOG("av depth %.2f\n", info.av_depth);
     LOG("av access %.2f\n", info.av_access);
 
+    int i;
+    for(i = 0; i < MAX_CUT_TYPE; i++) {
+        LOG("cut_type %d %d\n", i, info.cut_type[i]);
+    }
+    int size = info.node_cnt * sizeof(struct cnode) + info.rule_cnt * sizeof(rule_t); 
+    LOG("memory %d %.2fK %.4fM\n", size, size/1024., size/(1024.* 1024)); 
 }
 
 struct ct_info {

@@ -18,6 +18,8 @@ struct ctree_info {
 
     float av_depth;
     float av_access;
+
+    int   cut_type[MAX_CUT_TYPE];
 };
 
 void get_tree_info(struct cnode *root);
