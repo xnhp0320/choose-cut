@@ -173,8 +173,8 @@ hi_get_rule_hist(rule_set_t *ruleset, int dim, struct cut_aux *cut_aux)
 
 static double hi_match_expect(struct cnode *n, int dim, struct cut_aux *aux)
 {
-    if(n == 0x7ffff5a8dcd0)
-        LOG("HELLO");
+    //if(n == 0x7ffff5a8dcd0)
+    //    LOG("HELLO");
 
     return hi_get_rule_hist(&n->ruleset, dim, aux);
 }
@@ -201,10 +201,10 @@ hi_traverse(struct cnode *curr, void (*traverse_func)(struct cnode *n, void *arg
     int bit_pos;
 
     while(curr->hn.bitmap ^ mask) {
-        bit_pos = __builtin_ctz(curr->hn.bitmap ^ mask);
+        bit_pos = __builtin_ctzll(curr->hn.bitmap ^ mask);
         n = hi_next(curr, bit_pos); 
         traverse(n, traverse_func, arg, depth + 1);
-        mask |= (1 << bit_pos);
+        mask |= (1ULL << bit_pos);
     }
 }
 
@@ -314,8 +314,8 @@ hi_set_node(struct cnode *n, int dim, struct hi_aux *aux)
 
 static int hi_cut(struct cnode *n, int dim, struct cut_aux *cut_aux)
 {
-    if(n == 0x7ffff5a8dcd0) 
-        LOG("HELLO");
+    //if(n == 0x7ffff5a8dcd0) 
+    //    LOG("HELLO");
 
     struct hi_aux *aux = &cut_aux->hi_aux;
     struct cnode *childs = bc_calloc(aux->hist[dim].childs, sizeof(*n));

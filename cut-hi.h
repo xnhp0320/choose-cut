@@ -6,7 +6,7 @@
 static inline struct cnode *hi_next(struct cnode *n, int idx)
 {
     uint64_t mask = (1ULL << idx) -1;
-    int offset = __builtin_popcount(n->hn.bitmap & mask);
+    int offset = __builtin_popcountll(n->hn.bitmap & mask);
     return (struct cnode *)(n->hn.child_ptr) + offset;
 }
 
