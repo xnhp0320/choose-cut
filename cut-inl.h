@@ -1,11 +1,12 @@
 #ifndef _CUT_INL_H_
 #define _CUT_INL_H_
 
-#include "mb_node.h"
 #include "rule.h"
 #include <ccan/heap/heap.h>
 #include <ccan/darray/darray.h>
+#include <assert.h>
 
+#define STRIDE 6
 #define CHILDCOUNT ((1<<STRIDE) + (1<<STRIDE) - 1)
 #define INL_OFFSET ((1<< STRIDE) -1)
 #define HICHILD ((1<<STRIDE))

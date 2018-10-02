@@ -1,5 +1,4 @@
 #include <ccan/opt/opt.h>
-#include "mb_node.h"
 #include "utils-inl.h"
 #include "rule.h"
 #include "cut.h"

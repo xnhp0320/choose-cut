@@ -27,4 +27,31 @@ void get_tree_info(struct cnode *root);
 typedef darray(struct cnode) ctree_t;
 
 ctree_t compact(struct cnode *root);
+
+static inline void set_bit32(uint32_t *bitmap, int pos)
+{
+    *bitmap |= (1ULL << pos);
+}
+
+static inline void clear_bit32(uint32_t *bitmap, int pos)
+{
+    *bitmap &= ~(1ULL << pos);
+}
+
+static inline void set_bit(uint64_t *bitmap, int pos)
+{
+    *bitmap |= (1ULL << pos);
+}
+
+static inline void clear_bit(uint64_t *bitmap, int pos)
+{
+    *bitmap &= ~(1ULL << pos);
+}
+
+static inline uint64_t test_bit(uint64_t bitmap, int pos)
+{
+    return (bitmap & (1ULL << pos));
+}
+
+
 #endif
