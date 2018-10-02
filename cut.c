@@ -113,9 +113,9 @@ int search(struct cnode *root, struct flow *flow)
     struct cnode *n = root;
     while(n && !n->leaf) {
         switch (n->type) {
-            //case BITMAP_CUT:
-            //    n = even_search(n, flow);
-            //    break;
+            case BITMAP_CUT:
+                n = even_search(n, flow);
+                break;
             case SPLIT_CUT:
                 n = split_search(n, flow);
                 break;
