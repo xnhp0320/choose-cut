@@ -82,29 +82,6 @@ void cut(struct cnode *root)
     
 }
 
-int lsearch(rule_set_t *ruleset, struct flow *flow)
-{
-    int i;
-    for(i=0;i<ruleset->num;i++) {
-        if(flow->key[0] >= ruleset->ruleList[i].range[0][0] 
-                && flow->key[0] <= ruleset->ruleList[i].range[0][1]
-                && flow->key[1] >= ruleset->ruleList[i].range[1][0]
-                && flow->key[1] <= ruleset->ruleList[i].range[1][1]
-                && flow->key[2] >= ruleset->ruleList[i].range[2][0]
-                && flow->key[2] <= ruleset->ruleList[i].range[2][1]
-#if DIM == 5 
-                && flow->key[3] >= ruleset->ruleList[i].range[3][0]
-                && flow->key[3] <= ruleset->ruleList[i].range[3][1]
-                && flow->key[4] >= ruleset->ruleList[i].range[4][0]
-                && flow->key[4] <= ruleset->ruleList[i].range[4][1]
-#endif
-          ){
-            return ruleset->ruleList[i].pri;
-        }
-    }
-
-    return -1;
-}
 
 
 int search(struct cnode *root, struct flow *flow)
