@@ -85,8 +85,8 @@ void sample_testing(struct cnode *root, rule_set_t *ruleset)
     struct flow *f = sample_rules(ruleset, sample_cnt);
 
     for(i = 0; i < ruleset->num * sample_cnt; i++) {
-        if(i == 47028)
-            LOG("HELLO");
+        //if(i == 47028)
+        //    LOG("HELLO");
 
         int lpri = lsearch(ruleset, &f[i]);
         pri = search(root, &f[i]);  
